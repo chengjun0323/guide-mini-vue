@@ -47,7 +47,7 @@ export function track(target, key) {
   }
 
   if (!activeEffect) return;
-
+ 
   dep.add(activeEffect);
   activeEffect.deps.push(dep);
 }
