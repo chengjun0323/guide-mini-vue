@@ -1,5 +1,7 @@
 import { extend } from "../shared";
 
+let activeEffect;
+let shouldTrack;
 class ReactiveEffect {
   private _fn;
   deps = [];
@@ -11,8 +13,18 @@ class ReactiveEffect {
     this.scheduler = scheduler;
   }
   run() {
+    if (!this.active) {
+      return this._fn();
+    }
+    // 应该收集
+    shouldTrack = true;
     activeEffect = this;
-    return this._fn();
+
+    const result = this._fn();
+    // 重置
+    shouldTrack = false;
+
+    return result;
   }
   stop() {
     if (this.active) {
@@ -33,6 +45,7 @@ function cleanupEffect(effect) {
 
 const targetMap = new Map();
 export function track(target, key) {
+  if (!isTracking()) return;
   // target -> key -> dep
   let depsMap = targetMap.get(target);
   if (!depsMap) {
@@ -45,11 +58,14 @@ export function track(target, key) {
     dep = new Set();
     depsMap.set(key, dep);
   }
-
-  if (!activeEffect) return;
- 
+  if (dep.has(activeEffect)) return;
+  // 已经在dep中
   dep.add(activeEffect);
   activeEffect.deps.push(dep);
+}
+
+function isTracking() {
+  return shouldTrack && activeEffect !== undefined;
 }
 
 export function trigger(target, key) {
@@ -64,7 +80,6 @@ export function trigger(target, key) {
   }
 }
 
-let activeEffect;
 export function effect(fn, options: any = {}) {
   // fn
   const _effect = new ReactiveEffect(fn, options.scheduler);
