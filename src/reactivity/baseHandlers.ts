@@ -1,12 +1,15 @@
+import { extend, isObject } from "../shared";
 import { track, trigger } from "./effect";
-import { ReactiveFlags } from "./reactive";
+import { ReactiveFlags, reactive, readonly } from "./reactive";
 
 const get = createGetter();
 const set = createSetter();
 
 const readonlyGet = createGetter(true);
 
-function createGetter(isReadonly = false) {
+const shadowReadonlyGet = createGetter(true, true);
+
+function createGetter(isReadonly = false, shadow = false) {
   return function get(target, key) {
     if (key === ReactiveFlags.IS_REACTIVE) {
       return !isReadonly;
@@ -14,8 +17,14 @@ function createGetter(isReadonly = false) {
       return isReadonly;
     }
     const res = Reflect.get(target, key);
+    if (shadow) {
+      return res;
+    }
+    if (isObject(res)) {
+      return isReadonly ? readonly(res) : reactive(res);
+    }
     if (!isReadonly) {
-      track(target, key); 
+      track(target, key);
     }
     return res;
   };
@@ -38,7 +47,10 @@ export const readonlyHandlers = {
   get: readonlyGet,
   set(target, key, value) {
     console.warn(`key:${key} set 失败，因为 target 是readonly`);
-
     return true;
   },
 };
+
+export const shadowReadonlyHandlers = extend({}, readonlyHandlers, {
+  get: shadowReadonlyGet,
+});
