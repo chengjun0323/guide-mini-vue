@@ -2,13 +2,13 @@ import { extend } from "../shared";
 
 let activeEffect;
 let shouldTrack;
-class ReactiveEffect {
+ export class ReactiveEffect {
   private _fn;
   deps = [];
   active = true;
   onStop?: () => void;
   public scheduler;
-  constructor(fn, scheduler?) {
+  constructor(fn, scheduler?) { 
     this._fn = fn;
     this.scheduler = scheduler;
   }
@@ -53,7 +53,7 @@ export function track(target, key) {
     depsMap = new Map();
     targetMap.set(target, depsMap);
   }
-
+  
   let dep = depsMap.get(key);
   if (!dep) {
     dep = new Set();
