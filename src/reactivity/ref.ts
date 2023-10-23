@@ -17,7 +17,7 @@ class RefImpl {
     return this._value;
   }
   set value(newValue) {
-    if (hasChanged(newValue, this._rawValue)) {
+    if (hasChanged(this._rawValue, newValue)) {
       this._rawValue = newValue;
       this._value = convert(newValue);
       triggerEffects(this.dep);
@@ -45,4 +45,19 @@ export function isRef(ref) {
 
 export function unRef(ref) {
   return isRef(ref) ? ref.value : ref;
+}
+
+export function proxyRefs(objectWithRef) {
+  return new Proxy(objectWithRef, {
+    get(target, key) {
+      return unRef(Reflect.get(target, key));
+    },
+    set(target, key, value) {
+      if (isRef(target[key]) && !isRef(value)) {
+        return (target[key].value = value);
+      } else {
+        return Reflect.set(target, key, value);
+      }
+    },
+  });
 }
