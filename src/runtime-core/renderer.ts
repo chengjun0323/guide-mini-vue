@@ -1,29 +1,63 @@
+import { isObject } from "../shared/index";
 import { createComponentInstance, setupComponent } from "./component";
 
-export function render(vnode, container) {
+export function render(initialVNode, container) {
   // patch
-  patch(vnode, container);
+  patch(initialVNode, container);
 }
 
-function patch(vnode, container) {
+function patch(initialVNode, container) {
   // 判断是 component 还是 element，分别处理
   // 处理组件
   // 思考：如何区别是 element 还是 component 类型
-  processComponent(vnode, container);
+  if (typeof initialVNode.type === "string") {
+    processElement(initialVNode, container);
+  } else if (isObject(initialVNode.type)) {
+    processComponent(initialVNode, container);
+  }
 }
 
-function processComponent(vnode: any, container: any) {
-  mountComponent(vnode, container);
+function processElement(initialVNode: any, container: any) {
+  mountElement(initialVNode, container);
 }
 
-function mountComponent(vnode: any, container) {
-  const instance = createComponentInstance(vnode);
+function mountElement(initialVNode: any, container: any) {
+  const { type, props, children } = initialVNode;
+  const el = (initialVNode.el = document.createElement(type));
+  // string array
+  if (typeof children === "string") {
+    el.textContent = children;
+  } else if (Array.isArray(children)) {
+    mountChildren(initialVNode, el);
+  }
+  // props
+  for (let key in props) {
+    el.setAttribute(key, props[key]);
+  }
+
+  container.append(el);
+}
+
+function mountChildren(initialVNode, el) {
+  initialVNode.children.forEach((v) => {
+    patch(v, el);
+  });
+}
+
+function processComponent(initialVNode: any, container: any) {
+  mountComponent(initialVNode, container);
+}
+
+function mountComponent(initialVNode: any, container: any) {
+  const instance = createComponentInstance(initialVNode);
   setupComponent(instance);
-  setupRenderEffect(instance, container);
+  setupRenderEffect(instance, initialVNode, container);
 }
 
-function setupRenderEffect(instance, container) {
-  const subTree = instance.render();
-  // vnode -> element -> mountElement
+function setupRenderEffect(instance, initialVNode, container) {
+  const { proxy } = instance;
+  const subTree = instance.render.call(proxy);
+  // initialVNode -> element -> mountElement
   patch(subTree, container);
+  initialVNode.el = subTree.el;
 }
