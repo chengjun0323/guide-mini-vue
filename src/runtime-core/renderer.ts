@@ -33,6 +33,10 @@ function mountElement(initialVNode: any, container: any) {
   }
   // props
   for (let key in props) {
+    const isOn = (key) => /^on[A-Z]/.test(key)
+    if (isOn(key)) {
+      el.addEventListener(key.slice(2).toLowerCase(), props[key])
+    }
     el.setAttribute(key, props[key]);
   }
 
