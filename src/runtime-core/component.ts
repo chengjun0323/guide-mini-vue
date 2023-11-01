@@ -1,4 +1,5 @@
 import { shadowReadonly } from "../reactivity/reactive";
+import { emit } from "./componentEmit";
 import { publicInstanceProxyHandlers } from "./componentPublicInstance";
 import { initProps } from "./compoonentProps";
 
@@ -8,7 +9,9 @@ export function createComponentInstance(vnode) {
     type: vnode.type,
     setupState: {},
     props: {},
+    emit: () => {}
   };
+  component.emit = emit.bind(null, component) as any;
   return component;
 }
 
@@ -24,7 +27,9 @@ function setupStatefulComponent(instance: any) {
   instance.proxy = new Proxy({ _: instance }, publicInstanceProxyHandlers);
   const { setup } = Component;
   if (setup) {
-    const setupResult = setup(shadowReadonly(instance.props));
+    const setupResult = setup(shadowReadonly(instance.props), {
+      emit: instance.emit
+    });
     handleSetupResult(instance, setupResult);
   }
 }
