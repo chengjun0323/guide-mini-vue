@@ -1,5 +1,6 @@
 import { ShapeFlags } from "../shared/ShapeFlags";
 import { createComponentInstance, setupComponent } from "./component";
+import { Fragment, Text } from "./vnode";
 
 export function render(initialVNode, container) {
   // patch
@@ -8,14 +9,33 @@ export function render(initialVNode, container) {
 
 function patch(initialVNode, container) {
   // 判断是 component 还是 element，分别处理
-  // 处理组件
-  // 思考：如何区别是 element 还是 component 类型
-  const { shapeFlag } = initialVNode;
-  if (shapeFlag & ShapeFlags.ELEMENT) {
-    processElement(initialVNode, container);
-  } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
-    processComponent(initialVNode, container);
+  // Fragment 只渲染 children
+  const { type, shapeFlag } = initialVNode;
+  switch (type) {
+    case Fragment:
+      processFragment(initialVNode, container);
+      break;
+    case Text:
+      processText(initialVNode, container);
+      break;
+    default:
+      if (shapeFlag & ShapeFlags.ELEMENT) {
+        processElement(initialVNode, container);
+      } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
+        processComponent(initialVNode, container);
+      }
+      break;
   }
+}
+
+function processFragment(initialVNode, container) {
+  mountChildren(initialVNode, container);
+}
+
+function processText(initialVNode, container) {
+  const { children } = initialVNode;
+  const textNode = (initialVNode.el = document.createTextNode(children));
+  container.append(textNode);
 }
 
 function processElement(initialVNode: any, container: any) {
@@ -33,9 +53,9 @@ function mountElement(initialVNode: any, container: any) {
   }
   // props
   for (let key in props) {
-    const isOn = (key) => /^on[A-Z]/.test(key)
+    const isOn = (key) => /^on[A-Z]/.test(key);
     if (isOn(key)) {
-      el.addEventListener(key.slice(2).toLowerCase(), props[key])
+      el.addEventListener(key.slice(2).toLowerCase(), props[key]);
     }
     el.setAttribute(key, props[key]);
   }

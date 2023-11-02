@@ -5,8 +5,8 @@ export function emit(instance, event, ...args) {
   const { props } = instance;
   // TPP
   // 先写一个特定行为 -> 重构为通用行为
-  // add -> Add
-  // add-foo -> addFoo
+  // add -> Add -> onAdd
+  // add-foo -> addFoo -> onAddFoo
  
   const handlerName = toHandlerKey(camelize(event));
   const handler = props[handlerName];
