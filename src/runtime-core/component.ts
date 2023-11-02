@@ -2,15 +2,17 @@ import { shadowReadonly } from "../reactivity/reactive";
 import { emit } from "./componentEmit";
 import { publicInstanceProxyHandlers } from "./componentPublicInstance";
 import { initSlots } from "./componentSlot";
-import { initProps } from "./compoonentProps";
+import { initProps } from "./componentProps";
 
-export function createComponentInstance(vnode) {
+export function createComponentInstance(vnode, parent) {
   const component = {
     vnode,
     type: vnode.type,
     setupState: {},
     props: {},
     slots: {},
+    provides: parent ? parent.provides :  {},
+    parent,
     emit: () => {},
   };
   component.emit = emit.bind(null, component) as any;
